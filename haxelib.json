@@ -1,0 +1,13 @@
+{
+  "name": "SwiftScript",
+  "url" : "https://github.com/",
+  "license": "MIT",
+  "tags": ["interp", "parser"],
+  "description": "SwiftScript is a interp for swift that turns it into a scripting language for haxe programs",
+  "version": "1.0.0",
+  "classPath": "src/",
+  "releasenote": "AAAAA",
+  "contributors": ["Anon"],
+  "dependencies": {},
+  "main": "swift.Main"
+}
