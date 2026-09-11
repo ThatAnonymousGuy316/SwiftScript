@@ -1,8 +1,6 @@
 package swift;
 
 import swift.Ast;
-import swift.Lexer;
-import swift.Callable;
 
 class Interpreter {
 	public var globals:Environment = new Environment();
@@ -25,8 +23,19 @@ class Interpreter {
 	}
 
 	public function run(statements:Array<Stmt>) {
+		hoistFunctions(statements, globals);
 		for (stmt in statements) {
 			execute(stmt);
+		}
+	}
+
+	function hoistFunctions(statements:Array<Stmt>, env:Environment) {
+		for (stmt in statements) {
+			switch (stmt) {
+				case FuncDecl(name, params, body):
+					env.define(name, new SSFunction(params, body, env));
+				default:
+			}
 		}
 	}
 
@@ -88,6 +97,7 @@ class Interpreter {
 		var previous = environment;
 		environment = blockEnv;
 		try {
+			hoistFunctions(statements, blockEnv);
 			for (stmt in statements) execute(stmt);
 			environment = previous;
 		} catch (e:Dynamic) {
@@ -110,10 +120,23 @@ class Interpreter {
 			case Binary(left, op, right):
 				evalBinary(evaluate(left), op, evaluate(right));
 
+			case Logical(left, op, right):
+				var leftVal = evaluate(left);
+				switch (op) {
+					case PipePipe:
+						if (isTruthy(leftVal)) leftVal else evaluate(right);
+					case AmpAmp:
+						if (!isTruthy(leftVal)) leftVal else evaluate(right);
+					default:
+						trace('Unsupported logical operator: $op');
+						null;
+				}
+
 			case Unary(op, exprInner):
 				var v = evaluate(exprInner);
 				switch (op) {
 					case Minus: -(v : Float);
+					case Bang: !isTruthy(v);
 					default: null;
 				}
 

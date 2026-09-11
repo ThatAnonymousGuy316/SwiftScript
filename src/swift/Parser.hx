@@ -1,7 +1,6 @@
 package swift;
 
 import swift.Ast;
-import swift.Lexer;
 
 class Parser {
 	var tokens:Array<Token>;
@@ -83,8 +82,12 @@ class Parser {
 		var thenBranch = block();
 		var elseBranch:Null<Array<Stmt>> = null;
 		if (match(Else)) {
-			consume(LBrace, "Expected '{' after else");
-			elseBranch = block();
+			if (check(If)) {
+				elseBranch = [ifStmt()];
+			} else {
+				consume(LBrace, "Expected '{' after else");
+				elseBranch = block();
+			}
 		}
 		return If(cond, thenBranch, elseBranch);
 	}
@@ -133,13 +136,33 @@ class Parser {
 	function expression():Expr return assignment();
 
 	function assignment():Expr {
-		var expr = equality();
+		var expr = logicalOr();
 		if (match(Equals)) {
 			var value = assignment();
 			switch (expr) {
 				case Variable(name): return Assign(name, value);
 				default: trace("Invalid assignment target");
 			}
+		}
+		return expr;
+	}
+
+	function logicalOr():Expr {
+		var expr = logicalAnd();
+		while (check(PipePipe)) {
+			var op = advance().type;
+			var right = logicalAnd();
+			expr = Logical(expr, op, right);
+		}
+		return expr;
+	}
+
+	function logicalAnd():Expr {
+		var expr = equality();
+		while (check(AmpAmp)) {
+			var op = advance().type;
+			var right = equality();
+			expr = Logical(expr, op, right);
 		}
 		return expr;
 	}
@@ -185,7 +208,7 @@ class Parser {
 	}
 
 	function unary():Expr {
-		if (check(Minus)) {
+		if (check(Minus) || check(Bang)) {
 			var op = advance().type;
 			var right = unary();
 			return Unary(op, right);
@@ -231,6 +254,7 @@ class Parser {
 		}
 		return args;
 	}
+
 	function closure():Expr {
 		consume(LBrace, "Expected '{' to start closure");
 		var params = tryParseClosureParams();

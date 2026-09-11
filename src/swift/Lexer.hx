@@ -34,6 +34,7 @@ enum TokenType {
 	PlusEq; MinusEq;
 	EqEq; NotEq;
 	Lt; Gt; LtEq; GtEq;
+	AmpAmp; PipePipe; Bang;
 
 	Newline;
 	EOF;
@@ -100,6 +101,7 @@ class Lexer {
 			case '*': add(Star, c);
 			case '/':
 				if (match('/')) {
+					// line comment - skip to end of line
 					while (peek() != '\n' && !isAtEnd()) advance();
 				} else {
 					add(Slash, c);
@@ -107,7 +109,11 @@ class Lexer {
 			case '=':
 				if (match('=')) add(EqEq, "==") else add(Equals, c);
 			case '!':
-				if (match('=')) add(NotEq, "!=");
+				if (match('=')) add(NotEq, "!=") else add(Bang, "!");
+			case '&':
+				if (match('&')) add(AmpAmp, "&&") else trace('Unexpected character "&" at line $line - did you mean "&&"?');
+			case '|':
+				if (match('|')) add(PipePipe, "||") else trace('Unexpected character "|" at line $line - did you mean "||"?');
 			case '<':
 				if (match('=')) add(LtEq, "<=") else add(Lt, c);
 			case '>':
@@ -160,7 +166,7 @@ class Lexer {
 		var type = keywords.exists(text) ? keywords.get(text) : Identifier;
 		tokens.push({type: type, lexeme: text, line: line});
 	}
-
+	
 	function add(type:TokenType, lexeme:String) {
 		tokens.push({type: type, lexeme: lexeme, line: line});
 	}

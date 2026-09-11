@@ -1,13 +1,12 @@
 package swift;
 
-import swift.Lexer;
-
 enum Expr {
 	Literal(value:Dynamic);
 	NilLiteral;
 	Variable(name:String);
 	Assign(name:String, value:Expr);
 	Binary(left:Expr, op:TokenType, right:Expr);
+	Logical(left:Expr, op:TokenType, right:Expr);
 	Unary(op:TokenType, expr:Expr);
 	Call(callee:Expr, args:Array<Expr>, trailingClosure:Null<Expr>);
 	Closure(params:Array<String>, body:Array<Stmt>);
